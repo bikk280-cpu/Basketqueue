@@ -1,0 +1,17 @@
+/* reset พื้นฐาน */
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: #000000;
+  font-family: 'Kanit', sans-serif;
+}
+
+/* กัน scroll แปลก ๆ */
+body {
+  overflow-x: hidden;
+}

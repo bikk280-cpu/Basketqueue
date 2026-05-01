@@ -1,4 +1,5 @@
 import { useState } from "react";
+import "./index.css";
 
 const PALETTE = ["#E8663D","#3B82F6","#10B981","#F59E0B","#8B5CF6","#EF4444","#06B6D4","#84CC16","#EC4899","#14B8A6"];
 
@@ -16,7 +17,7 @@ function Avatar({ name, size = 36 }) {
       width: size, height: size, borderRadius: "50%", background: bg, color: "#fff",
       display: "flex", alignItems: "center", justifyContent: "center",
       fontSize: size * 0.36, fontWeight: 700, flexShrink: 0,
-      fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: 1,
+      fontFamily: "'Mitr', sans-serif", letterSpacing: 1,
     }}>{initials}</div>
   );
 }
@@ -87,12 +88,14 @@ function SetupScreen({ onStart }) {
   const lbl = { fontSize: 11, color: "rgba(255,255,255,0.45)", marginBottom: 6, display: "block", letterSpacing: 1, textTransform: "uppercase" };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#111827", padding: "24px 16px", fontFamily: "'Barlow', sans-serif" }}>
-      <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet" />
+    <div style={{ minheight: "100vh", background: "#000000", padding: "24px 16px", fontFamily: "'Kanit', sans-serif" }}>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+      <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Lexend:wght@100..900&family=Mitr:wght@200;300;400;500;600;700&display=swap" rel="stylesheet" />
       <div style={{ maxWidth: 400, margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: 24 }}>
           <div style={{ fontSize: 40, marginBottom: 8 }}>🏀</div>
-          <h1 style={{ color: "#E8663D", fontFamily: "'Barlow Condensed'", fontSize: 26, fontWeight: 700, margin: "0 0 4px", letterSpacing: 2 }}>BASKETBALL QUEUE</h1>
+          <h1 style={{ color: "#E8663D", fontFamily: "'Mitr', sans-serif", fontSize: 26, fontWeight: 700, margin: "0 0 4px", letterSpacing: 2 }}>BASKETBALL QUEUE</h1>
           <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 13, margin: 0 }}>ตั้งค่าสถานะเริ่มต้น</p>
         </div>
 
@@ -149,7 +152,7 @@ function SetupScreen({ onStart }) {
             background: canStart ? "#E8663D" : "rgba(255,255,255,0.1)",
             color: canStart ? "#fff" : "rgba(255,255,255,0.3)",
             fontSize: 16, fontWeight: 700, cursor: canStart ? "pointer" : "not-allowed",
-            fontFamily: "'Barlow Condensed'", letterSpacing: 2, textTransform: "uppercase",
+            fontFamily: "'Mitr', sans-serif", letterSpacing: 2, textTransform: "uppercase",
           }}>เริ่มรันคิว →</button>
       </div>
     </div>
@@ -259,12 +262,14 @@ function QueueScreen({ initial, onReset }) {
   );
 
   return (
-    <div style={{ minHeight: "100vh", background: "#111827", padding: "16px", fontFamily: "'Barlow', sans-serif" }}>
-      <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet" />
+    <div style={{ height: "100vh", background: "#000000", padding: "16px", fontFamily: "'Kanit', sans-serif" }}>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+      <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Lexend:wght@100..900&family=Mitr:wght@200;300;400;500;600;700&display=swap" rel="stylesheet" />
       <div style={{ maxWidth: 400, margin: "0 auto" }}>
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-          <h1 style={{ color: "#E8663D", fontFamily: "'Barlow Condensed'", fontSize: 20, fontWeight: 700, margin: 0, letterSpacing: 1.5 }}>🏀 BASKETBALL QUEUE</h1>
+          <h1 style={{ color: "#E8663D", fontFamily: "'Mitr', sans-serif", fontSize: 20, fontWeight: 700, margin: 0, letterSpacing: 1.5 }}>BASKETBALL QUEUE</h1>
           <div style={{ display: "flex", gap: 6 }}>
             <button onClick={() => setShowLog(s => !s)} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, color: "rgba(255,255,255,0.55)", padding: "5px 10px", cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>
               📋 {showLog ? "ซ่อน" : "log"}
@@ -293,7 +298,7 @@ function QueueScreen({ initial, onReset }) {
               const isEditing = editing === side;
               return (
                 <>
-                  {idx === 1 && <span key="vs" style={{ color: "rgba(255,255,255,0.35)", fontWeight: 700, fontSize: 14, textAlign: "center", fontFamily: "'Barlow Condensed'" }}>VS</span>}
+                  {idx === 1 && <span key="vs" style={{ color: "rgba(255,255,255,0.35)", fontWeight: 700, fontSize: 14, textAlign: "center", fontFamily: "'Mitr', sans-serif" }}>VS</span>}
                   <div key={side} style={{ background: "rgba(255,255,255,0.06)", borderRadius: 10, padding: "12px 8px", textAlign: "center" }}>
                     <Avatar name={team.name} size={38} />
                     {isEditing ? (
@@ -302,7 +307,7 @@ function QueueScreen({ initial, onReset }) {
                       </div>
                     ) : (
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, margin: "8px 0 6px" }}>
-                        <p style={{ color: "#fff", fontWeight: 600, fontSize: 13, margin: 0, fontFamily: "'Barlow Condensed'", lineHeight: 1.2 }}>{team.name}</p>
+                        <p style={{ color: "#fff", fontWeight: 600, fontSize: 13, margin: 0, fontFamily: "'Mitr', sans-serif", lineHeight: 1.2 }}>{team.name}</p>
                         <IconBtn onClick={() => setEditing(side)}>✎</IconBtn>
                       </div>
                     )}
@@ -311,7 +316,7 @@ function QueueScreen({ initial, onReset }) {
                       marginTop: 10, width: "100%", padding: "7px 0", borderRadius: 8,
                       background: "#E8663D", border: "none", color: "#fff",
                       fontWeight: 700, cursor: "pointer", fontSize: 12,
-                      fontFamily: "'Barlow Condensed'", letterSpacing: 1,
+                      fontFamily: "'Mitr', sans-serif", letterSpacing: 1,
                     }}>ชนะ 🏆</button>
                   </div>
                 </>
@@ -332,7 +337,7 @@ function QueueScreen({ initial, onReset }) {
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <Avatar name={rest.name} size={34} />
                 <div style={{ flex: 1 }}>
-                  <p style={{ color: "#fff", fontWeight: 600, fontSize: 14, margin: 0, fontFamily: "'Barlow Condensed'" }}>{rest.name}</p>
+                  <p style={{ color: "#fff", fontWeight: 600, fontSize: 14, margin: 0, fontFamily: "'Mitr', sans-serif" }}>{rest.name}</p>
                   <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 11, margin: "2px 0 0" }}>รอ 1 ตา แล้วกลับมาเล่น</p>
                 </div>
                 <IconBtn onClick={() => setEditing("rest")}>✎</IconBtn>
@@ -369,7 +374,7 @@ function QueueScreen({ initial, onReset }) {
                 <InlineEdit value={t.name} onSave={saveEdit} onCancel={() => setEditing(null)} />
               ) : (
                 <>
-                  <span style={{ flex: 1, color: "#fff", fontSize: 14, fontFamily: "'Barlow Condensed'", fontWeight: 600 }}>{t.name}</span>
+                  <span style={{ flex: 1, color: "#fff", fontSize: 14, fontFamily: "'Mitr', sans-serif", fontWeight: 600 }}>{t.name}</span>
                   {i === 0 && <span style={{ color: "#E8663D", fontSize: 10, fontWeight: 700, letterSpacing: 1 }}>NEXT</span>}
                   <IconBtn onClick={() => setEditing(i)}>✎</IconBtn>
                   <IconBtn danger onClick={() => { setQueue(prev => prev.filter((_, j) => j !== i)); pushLog(`🗑️ ลบ ${t.name} ออกจากคิว`); }}>×</IconBtn>
