@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import React, { useState, useRef, Fragment } from "react";
 import "./index.css";
 
 const PALETTE = ["#E8663D","#3B82F6","#10B981","#F59E0B","#8B5CF6","#EF4444","#06B6D4","#84CC16","#EC4899","#14B8A6"];
@@ -109,9 +109,9 @@ function SetupScreen({ onStart }) {
   const lbl = { fontSize: 11, color: "rgba(255,255,255,0.45)", marginBottom: 6, display: "block", letterSpacing: 1, textTransform: "uppercase" };
 
   return (
-    <div style={{ minheight: "100vh", background: "#000000", padding: "24px 16px", fontFamily: "'Kanit', sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "#000000", padding: "24px 16px", fontFamily: "'Kanit', sans-serif" }}>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Lexend:wght@100..900&family=Mitr:wght@200;300;400;500;600;700&display=swap" rel="stylesheet" />
       <div style={{ maxWidth: 400, margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: 24 }}>
@@ -321,7 +321,7 @@ function QueueScreen({ initial, onReset }) {
   return (
     <div style={{ height: "100vh", background: "#000000", padding: "16px", fontFamily: "'Kanit', sans-serif" }}>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Lexend:wght@100..900&family=Mitr:wght@200;300;400;500;600;700&display=swap" rel="stylesheet" />
       <div style={{ maxWidth: 400, margin: "0 auto" }}>
 
@@ -374,9 +374,9 @@ function QueueScreen({ initial, onReset }) {
               const team = side === 'A' ? teamA : teamB;
               const isEditing = editing === side;
               return (
-                <>
+                <Fragment key={side}>
                   {idx === 1 && <span key="vs" style={{ color: "rgba(255,255,255,0.35)", fontWeight: 700, fontSize: 14, textAlign: "center", fontFamily: "'Mitr', sans-serif" }}>VS</span>}
-                  <div key={side} style={{ background: "rgba(255,255,255,0.06)", borderRadius: 10, padding: "12px 8px", textAlign: "center" }}>
+                  <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 10, padding: "12px 8px", textAlign: "center" }}>
                     <Avatar name={team.name} size={38} />
                     {isEditing ? (
                       <div style={{ marginTop: 8 }}>
@@ -396,7 +396,7 @@ function QueueScreen({ initial, onReset }) {
                       fontFamily: "'Mitr', sans-serif", letterSpacing: 1,
                     }}>ชนะ 🏆</button>
                   </div>
-                </>
+                </Fragment>
               );
             })}
           </div>
