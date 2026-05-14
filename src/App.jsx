@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import "./index.css";
 
 const PALETTE = ["#E8663D","#3B82F6","#10B981","#F59E0B","#8B5CF6","#EF4444","#06B6D4","#84CC16","#EC4899","#14B8A6"];
@@ -10,15 +10,36 @@ function getColor(name) {
 }
 
 function Avatar({ name, size = 36 }) {
-  const bg = getColor(name);
-  const initials = name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
+  const safeName = name || "?";
+  const bg = getColor(safeName);
+
+  const initials = safeName
+    .split(" ")
+    .map(w => w[0] || "")
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
   return (
-    <div style={{
-      width: size, height: size, borderRadius: "50%", background: bg, color: "#fff",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: size * 0.36, fontWeight: 700, flexShrink: 0,
-      fontFamily: "'Mitr', sans-serif", letterSpacing: 1,
-    }}>{initials}</div>
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: "50%",
+        background: bg,
+        color: "#fff",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: size * 0.36,
+        fontWeight: 700,
+        flexShrink: 0,
+        fontFamily: "'Mitr', sans-serif",
+        letterSpacing: 1,
+      }}
+    >
+      {initials}
+    </div>
   );
 }
 
