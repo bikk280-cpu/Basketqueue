@@ -212,13 +212,15 @@ function QueueScreen({ initial, onReset }) {
   const handleWin = (winner) => {
     saveSnapshot(); // ✅ บันทึกก่อนเปลี่ยน
 
-    const winTeam = { ...(winner === "A" ? teamA : teamB) };
-    const loseTeam = { ...(winner === "A" ? teamB : teamA) };
-    const newWins = winTeam.wins + 1;
-    const updatedWinner = { ...winTeam, wins: newWins };
+    const currentWinTeam = winner === "A" ? teamA : teamB;
+    const currentLoseTeam = winner === "A" ? teamB : teamA;
+    const newWins = currentWinTeam.wins + 1;
+    const updatedWinner = { ...currentWinTeam, wins: newWins };
 
-    pushLog(`🏆 ${updatedWinner.name} ชนะ ${loseTeam.name}`);
-    const q = [...queue, { name: loseTeam.name, wins: 0 }];
+    console.log(`${updatedWinner.name} wins: ${newWins}`); // debug ดูได้
+
+    pushLog(`🏆 ${updatedWinner.name} ชนะ ${currentLoseTeam.name}`);
+    const q = [...queue, { name: currentLoseTeam.name, wins: 0 }];
 
     if (newWins >= 2) {
       pushLog(`😮‍💨 ${updatedWinner.name} ชนะ 2 ตาติด → ออกพัก 1 ตา`);
