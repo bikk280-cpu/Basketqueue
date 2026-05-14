@@ -169,6 +169,7 @@ function QueueScreen({ initial, onReset }) {
   const [log, setLog] = useState([]);
   const [showLog, setShowLog] = useState(false);
 
+  // ✅ ระบบ Undo
   const [history, setHistory] = useState([]);
 
   const saveSnapshot = () => {
@@ -194,13 +195,10 @@ function QueueScreen({ initial, onReset }) {
     ...prev.slice(0, 29)
   ]);
 
-  const saveEdit = (newName) => {
-    saveSnapshot(); // ← เพิ่ม
-    // ... โค้ดเดิม
-  };
-
+  // ✅ saveEdit เดียว (ลบตัวซ้ำออก) + saveSnapshot
   const saveEdit = (newName) => {
     if (!newName) return;
+    saveSnapshot();
     if (editing === "A") { pushLog(`✏️ ${teamA.name} → ${newName}`); setTeamA(p => ({ ...p, name: newName })); }
     else if (editing === "B") { pushLog(`✏️ ${teamB.name} → ${newName}`); setTeamB(p => ({ ...p, name: newName })); }
     else if (editing === "rest" && rest) { pushLog(`✏️ ${rest.name} → ${newName}`); setRest(p => ({ ...p, name: newName })); }
@@ -212,12 +210,12 @@ function QueueScreen({ initial, onReset }) {
   };
 
   const handleWin = (winner) => {
+    saveSnapshot(); // ✅ บันทึกก่อนเปลี่ยน
+
     const winTeam = { ...(winner === "A" ? teamA : teamB) };
     const loseTeam = { ...(winner === "A" ? teamB : teamA) };
-    
-    // ✅ คำนวณ wins ใหม่อย่างชัดเจน
     const newWins = winTeam.wins + 1;
-    const updatedWinner = { ...winTeam, wins: newWins }; // ← spread ใหม่ทันที
+    const updatedWinner = { ...winTeam, wins: newWins };
 
     pushLog(`🏆 ${updatedWinner.name} ชนะ ${loseTeam.name}`);
     const q = [...queue, { name: loseTeam.name, wins: 0 }];
@@ -238,7 +236,8 @@ function QueueScreen({ initial, onReset }) {
 
       setTeamA(courtA);
       setTeamB(courtB);
-      setRest({ name: updatedWinner.name, wins: 0 }); // ✅ ใช้ updatedWinner
+      setRest({ name: updatedWinner.name, wins: 0 });
+      setQueue(q); // ✅ อย่าลืม set queue ใน branch นี้ด้วย
 
     } else {
       pushLog(`✊ ${updatedWinner.name} ชนะ ${newWins} ตา → เล่นต่อ`);
@@ -254,10 +253,10 @@ function QueueScreen({ initial, onReset }) {
       }
 
       if (winner === "A") {
-        setTeamA({ ...updatedWinner }); // ✅ ใช้ updatedWinner (wins ถูกต้อง)
+        setTeamA({ ...updatedWinner });
         setTeamB(next);
       } else {
-        setTeamB({ ...updatedWinner }); // ✅
+        setTeamB({ ...updatedWinner });
         setTeamA(next);
       }
 
@@ -269,6 +268,7 @@ function QueueScreen({ initial, onReset }) {
 
   const addToQueue = () => {
     if (!newTeam.trim()) return;
+    saveSnapshot(); // ✅
     const n = newTeam.trim();
     setQueue(prev => [...prev, { name: n, wins: 0 }]);
     pushLog(`➕ เพิ่ม ${n} เข้าคิว`);
@@ -276,6 +276,7 @@ function QueueScreen({ initial, onReset }) {
   };
 
   const removeRest = () => {
+    saveSnapshot(); // ✅
     pushLog(`🚪 ${rest.name} เลิกเล่น → ออกจาก Rest`);
     setRest(null);
     setEditing(null);
@@ -293,9 +294,29 @@ function QueueScreen({ initial, onReset }) {
       <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Lexend:wght@100..900&family=Mitr:wght@200;300;400;500;600;700&display=swap" rel="stylesheet" />
       <div style={{ maxWidth: 400, margin: "0 auto" }}>
 
+        {/* ✅ Header พร้อมปุ่ม Undo */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
           <h1 style={{ color: "#E8663D", fontFamily: "'Mitr', sans-serif", fontSize: 20, fontWeight: 700, margin: 0, letterSpacing: 1.5 }}>BASKETBALL QUEUE</h1>
           <div style={{ display: "flex", gap: 6 }}>
+            {/* ✅ ปุ่ม Undo */}
+            <button
+              onClick={undo}
+              disabled={history.length === 0}
+              style={{
+                background: history.length === 0 ? "rgba(255,255,255,0.04)" : "rgba(255,200,0,0.12)",
+                border: `1px solid ${history.length === 0 ? "rgba(255,255,255,0.1)" : "rgba(255,200,0,0.35)"}`,
+                borderRadius: 8,
+                color: history.length === 0 ? "rgba(255,255,255,0.2)" : "#ffd700",
+                padding: "5px 10px",
+                cursor: history.length === 0 ? "not-allowed" : "pointer",
+                fontSize: 12,
+                fontFamily: "inherit",
+                fontWeight: 600,
+                transition: "all 0.15s",
+              }}
+            >
+              ↩ {history.length > 0 ? `undo (${history.length})` : "undo"}
+            </button>
             <button onClick={() => setShowLog(s => !s)} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, color: "rgba(255,255,255,0.55)", padding: "5px 10px", cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>
               📋 {showLog ? "ซ่อน" : "log"}
             </button>
@@ -402,7 +423,7 @@ function QueueScreen({ initial, onReset }) {
                   <span style={{ flex: 1, color: "#fff", fontSize: 14, fontFamily: "'Mitr', sans-serif", fontWeight: 600 }}>{t.name}</span>
                   {i === 0 && <span style={{ color: "#E8663D", fontSize: 10, fontWeight: 700, letterSpacing: 1 }}>NEXT</span>}
                   <IconBtn onClick={() => setEditing(i)}>✎</IconBtn>
-                  <IconBtn danger onClick={() => { setQueue(prev => prev.filter((_, j) => j !== i)); pushLog(`🗑️ ลบ ${t.name} ออกจากคิว`); }}>×</IconBtn>
+                  <IconBtn danger onClick={() => { saveSnapshot(); setQueue(prev => prev.filter((_, j) => j !== i)); pushLog(`🗑️ ลบ ${t.name} ออกจากคิว`); }}>×</IconBtn>
                 </>
               )}
             </div>
