@@ -187,6 +187,8 @@ function QueueScreen({ initial, onReset }) {
     setRest(prev.rest);
     setQueue(prev.queue);
     setLog(prev.log);
+    // ✅ sync ref กลับด้วย
+    winsRef.current = { A: prev.teamA.wins, B: prev.teamB.wins };
     setHistory(h => h.slice(0, -1));
   };
 
@@ -209,24 +211,28 @@ function QueueScreen({ initial, onReset }) {
     setEditing(null);
   };
 
+  const winsRef = useRef({ A: initial.teamA.wins, B: initial.teamB.wins });
+
   const handleWin = (winner) => {
-    saveSnapshot(); // ✅ บันทึกก่อนเปลี่ยน
+    saveSnapshot();
+
+    // ✅ อ่านจาก ref แทน state — ได้ค่าล่าสุดเสมอ
+    const newWins = winsRef.current[winner] + 1;
+    winsRef.current[winner] = newWins;
 
     const currentWinTeam = winner === "A" ? teamA : teamB;
     const currentLoseTeam = winner === "A" ? teamB : teamA;
-    const newWins = currentWinTeam.wins + 1;
     const updatedWinner = { ...currentWinTeam, wins: newWins };
-
-    console.log(`${updatedWinner.name} wins: ${newWins}`); // debug ดูได้
 
     pushLog(`🏆 ${updatedWinner.name} ชนะ ${currentLoseTeam.name}`);
     const q = [...queue, { name: currentLoseTeam.name, wins: 0 }];
 
     if (newWins >= 2) {
+      // reset wins ของทีมใหม่ที่จะลงมาแข่ง
+      winsRef.current = { A: 0, B: 0 };
       pushLog(`😮‍💨 ${updatedWinner.name} ชนะ 2 ตาติด → ออกพัก 1 ตา`);
 
       let courtA, courtB;
-
       if (rest) {
         pushLog(`✅ ${rest.name} พักครบแล้ว → กลับมาเล่น`);
         courtA = { name: rest.name, wins: 0 };
@@ -239,13 +245,15 @@ function QueueScreen({ initial, onReset }) {
       setTeamA(courtA);
       setTeamB(courtB);
       setRest({ name: updatedWinner.name, wins: 0 });
-      setQueue(q); // ✅ อย่าลืม set queue ใน branch นี้ด้วย
+      setQueue(q);
 
     } else {
       pushLog(`✊ ${updatedWinner.name} ชนะ ${newWins} ตา → เล่นต่อ`);
 
-      let next;
+      // ✅ reset wins ของฝั่งที่แพ้
+      winsRef.current[winner === "A" ? "B" : "A"] = 0;
 
+      let next;
       if (rest) {
         pushLog(`🔄 ${rest.name} กลับมาแข่ง`);
         next = { ...rest, wins: 0 };
