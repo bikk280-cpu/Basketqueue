@@ -169,10 +169,35 @@ function QueueScreen({ initial, onReset }) {
   const [log, setLog] = useState([]);
   const [showLog, setShowLog] = useState(false);
 
+  const [history, setHistory] = useState([]);
+
+  const saveSnapshot = () => {
+    setHistory(prev => [
+      ...prev.slice(-19),
+      { teamA, teamB, rest, queue, log }
+    ]);
+  };
+
+  const undo = () => {
+    if (history.length === 0) return;
+    const prev = history[history.length - 1];
+    setTeamA(prev.teamA);
+    setTeamB(prev.teamB);
+    setRest(prev.rest);
+    setQueue(prev.queue);
+    setLog(prev.log);
+    setHistory(h => h.slice(0, -1));
+  };
+
   const pushLog = (msg) => setLog(prev => [
     { msg, time: new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }) },
     ...prev.slice(0, 29)
   ]);
+
+  const saveEdit = (newName) => {
+    saveSnapshot(); // ← เพิ่ม
+    // ... โค้ดเดิม
+  };
 
   const saveEdit = (newName) => {
     if (!newName) return;
