@@ -189,54 +189,54 @@ function QueueScreen({ initial, onReset }) {
   const handleWin = (winner) => {
     const winTeam = { ...(winner === "A" ? teamA : teamB) };
     const loseTeam = { ...(winner === "A" ? teamB : teamA) };
+    
+    // ✅ คำนวณ wins ใหม่อย่างชัดเจน
     const newWins = winTeam.wins + 1;
-    winTeam.wins = newWins;
+    const updatedWinner = { ...winTeam, wins: newWins }; // ← spread ใหม่ทันที
 
-    pushLog(`🏆 ${winTeam.name} ชนะ ${loseTeam.name}`);
+    pushLog(`🏆 ${updatedWinner.name} ชนะ ${loseTeam.name}`);
     const q = [...queue, { name: loseTeam.name, wins: 0 }];
 
     if (newWins >= 2) {
-    pushLog(`😮‍💨 ${winTeam.name} ชนะ 2 ตาติด → ออกพัก 1 ตา`);
+      pushLog(`😮‍💨 ${updatedWinner.name} ชนะ 2 ตาติด → ออกพัก 1 ตา`);
 
-    let courtA, courtB;
+      let courtA, courtB;
 
-    if (rest) {
+      if (rest) {
         pushLog(`✅ ${rest.name} พักครบแล้ว → กลับมาเล่น`);
         courtA = { name: rest.name, wins: 0 };
         courtB = q.shift() ?? { name: "รอทีม...", wins: 0 };
-    } else {
+      } else {
         courtA = q.shift() ?? { name: "รอทีม...", wins: 0 };
         courtB = q.shift() ?? { name: "รอทีม...", wins: 0 };
-    }
+      }
 
-    setTeamA(courtA);
-    setTeamB(courtB);
-    setRest({ name: winTeam.name, wins: 0 });
-    setQueue(q);
+      setTeamA(courtA);
+      setTeamB(courtB);
+      setRest({ name: updatedWinner.name, wins: 0 }); // ✅ ใช้ updatedWinner
 
     } else {
-    // ✅ ชนะ 1 ตา → เล่นต่อ
-    pushLog(`✊ ${winTeam.name} ชนะ ${newWins} ตา → เล่นต่อ`);
+      pushLog(`✊ ${updatedWinner.name} ชนะ ${newWins} ตา → เล่นต่อ`);
 
-    let next;
+      let next;
 
-    if (rest) {
+      if (rest) {
         pushLog(`🔄 ${rest.name} กลับมาแข่ง`);
         next = { ...rest, wins: 0 };
         setRest(null);
-    } else {
+      } else {
         next = q.shift() ?? { name: "รอทีม...", wins: 0 };
-    }
+      }
 
-    if (winner === "A") {
-        setTeamA({ ...winTeam });
+      if (winner === "A") {
+        setTeamA({ ...updatedWinner }); // ✅ ใช้ updatedWinner (wins ถูกต้อง)
         setTeamB(next);
-    } else {
-        setTeamB({ ...winTeam });
+      } else {
+        setTeamB({ ...updatedWinner }); // ✅
         setTeamA(next);
-    }
+      }
 
-    setQueue(q);
+      setQueue(q);
     }
 
     setEditing(null);
