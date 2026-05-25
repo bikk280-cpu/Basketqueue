@@ -1,4 +1,4 @@
-import React, { useState, useRef, Fragment } from "react";
+import React, { useState, useRef, Fragment, useEffect } from "react";
 import "./index.css";
 
 const PALETTE = ["#E8663D","#3B82F6","#10B981","#F59E0B","#8B5CF6","#EF4444","#06B6D4","#84CC16","#EC4899","#14B8A6"];
@@ -183,15 +183,15 @@ function SetupScreen({ onStart }) {
 function QueueScreen({ initial, onReset }) {
   const [teamA, setTeamA] = useState(initial.teamA);
   const [teamB, setTeamB] = useState(initial.teamB);
-  const [rest, setRest] = useState(initial.restTeam ? { name: initial.restTeam } : null);
-  const [queue, setQueue] = useState(initial.queue.map(n => ({ name: n })));
+  const [rest, setRest] = useState(initial.rest);
+  const [queue, setQueue] = useState(initial.queue);
   const [newTeam, setNewTeam] = useState("");
   const [editing, setEditing] = useState(null);
-  const [log, setLog] = useState([]);
+  const [log, setLog] = useState(initial.log || []);
   const [showLog, setShowLog] = useState(false);
 
   // ✅ ระบบ Undo
-  const [history, setHistory] = useState([]);
+  const [history, setHistory] = useState(initial.history || []);
 
   const saveSnapshot = () => {
     setHistory(prev => [
@@ -232,7 +232,16 @@ function QueueScreen({ initial, onReset }) {
     setEditing(null);
   };
 
-  const winsRef = useRef({ A: initial.teamA.wins, B: initial.teamB.wins });
+  const winsRef = useRef({ A: initial.teamA.wins || 0, B: initial.teamB.wins || 0 });
+
+  // ✅ Save state to localStorage whenever it changes
+  useEffect(() => {
+    const stateToSave = {
+      phase: "queue",
+      queueData: { teamA, teamB, rest, queue, log, history }
+    };
+    localStorage.setItem("basketball_queue_v1", JSON.stringify(stateToSave));
+  }, [teamA, teamB, rest, queue, log, history]);
 
   const handleWin = (winner) => {
     saveSnapshot();
@@ -472,12 +481,37 @@ function QueueScreen({ initial, onReset }) {
   );
 }
 
+const LS_KEY = "basketball_queue_v1";
+
 export default function App() {
-  const [phase, setPhase] = useState("setup");
-  const [config, setConfig] = useState(null);
+  const [phase, setPhase] = useState(() => {
+    try { const saved = localStorage.getItem(LS_KEY); if (saved) return JSON.parse(saved).phase; } catch(e) {}
+    return "setup";
+  });
+  const [config, setConfig] = useState(() => {
+    try { const saved = localStorage.getItem(LS_KEY); if (saved) return JSON.parse(saved).queueData; } catch(e) {}
+    return null;
+  });
 
   if (phase === "setup") {
-    return <SetupScreen onStart={cfg => { setConfig(cfg); setPhase("queue"); }} />;
+    return <SetupScreen onStart={cfg => { 
+      const initialData = {
+        teamA: cfg.teamA,
+        teamB: cfg.teamB,
+        rest: cfg.restTeam ? { name: cfg.restTeam } : null,
+        queue: cfg.queue.map(n => ({ name: n, wins: 0 })),
+        log: [],
+        history: []
+      };
+      localStorage.setItem(LS_KEY, JSON.stringify({ phase: "queue", queueData: initialData }));
+      setConfig(initialData); 
+      setPhase("queue"); 
+    }} />;
   }
-  return <QueueScreen initial={config} onReset={() => { setConfig(null); setPhase("setup"); }} />;
+
+  return <QueueScreen initial={config} onReset={() => { 
+    localStorage.removeItem(LS_KEY);
+    setConfig(null); 
+    setPhase("setup"); 
+  }} />;
 }
