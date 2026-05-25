@@ -355,7 +355,7 @@ function QueueScreen({ initial, onReset }) {
                 transition: "all 0.15s",
               }}
             >
-              ↩ {history.length > 0 ? `undo (${history.length})` : "undo"}
+              ↩ undo
             </button>
             <button onClick={() => setShowLog(s => !s)} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, color: "rgba(255,255,255,0.55)", padding: "5px 10px", cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>
               📋 {showLog ? "ซ่อน" : "log"}
