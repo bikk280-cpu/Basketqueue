@@ -1,4 +1,5 @@
 import React, { useState, useRef, Fragment, useEffect } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import "./index.css";
 
 const PALETTE = ["#E8663D","#3B82F6","#10B981","#F59E0B","#8B5CF6","#EF4444","#06B6D4","#84CC16","#EC4899","#14B8A6"];
@@ -189,6 +190,8 @@ function QueueScreen({ initial, onReset }) {
   const [editing, setEditing] = useState(null);
   const [log, setLog] = useState(initial.log || []);
   const [showLog, setShowLog] = useState(false);
+  const [showShare, setShowShare] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
 
   // ✅ ระบบ Undo
   const [history, setHistory] = useState(initial.history || []);
@@ -355,6 +358,16 @@ function QueueScreen({ initial, onReset }) {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
           <h1 style={{ color: "#E8663D", fontFamily: "'Mitr', sans-serif", fontSize: 20, fontWeight: 700, margin: 0, letterSpacing: 1.5 }}>BASKETBALL QUEUE</h1>
           <div style={{ display: "flex", gap: 6 }}>
+            {/* ✅ ปุ่ม Share */}
+            <button onClick={() => {
+              const exportData = { teamA, teamB, rest, queue };
+              const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(exportData))));
+              const url = `${window.location.origin}${window.location.pathname}?shareData=${b64}`;
+              setShareUrl(url);
+              setShowShare(true);
+            }} style={{ background: "rgba(232,102,61,0.2)", border: "1px solid rgba(232,102,61,0.5)", borderRadius: 8, color: "#E8663D", padding: "5px 10px", cursor: "pointer", fontSize: 12, fontFamily: "inherit", fontWeight: 600 }}>
+              📤 โอนคิว
+            </button>
             {/* ✅ ปุ่ม Undo */}
             <button
               onClick={undo}
@@ -500,6 +513,33 @@ function QueueScreen({ initial, onReset }) {
             <button onClick={addToQueue} style={{ background: "#E8663D", border: "none", borderRadius: 8, color: "#fff", padding: "0 16px", cursor: "pointer", fontSize: 22 }}>+</button>
           </div>
         </div>
+
+        {/* Share Modal */}
+        {showShare && (
+          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 20 }}>
+            <div style={{ background: "#1a1a1a", border: "1px solid #333", borderRadius: 16, padding: 24, textAlign: "center", maxWidth: 320, width: "100%" }}>
+              <h2 style={{ color: "#E8663D", fontSize: 18, margin: "0 0 16px", fontFamily: "'Mitr', sans-serif" }}>📤 สแกนเพื่อรับคิว</h2>
+              <div style={{ background: "#fff", padding: 16, borderRadius: 12, display: "inline-block", marginBottom: 16 }}>
+                <QRCodeSVG value={shareUrl} size={200} />
+              </div>
+              <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, marginBottom: 16 }}>
+                ให้เพื่อนสแกน QR Code นี้เพื่อเปิดเว็บและโหลดข้อมูลคิวไปทำต่อในเครื่องตัวเอง
+              </p>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={() => {
+                  navigator.clipboard.writeText(shareUrl);
+                  alert("คัดลอกลิงก์เรียบร้อยแล้ว!");
+                }} style={{ flex: 1, background: "rgba(255,255,255,0.1)", border: "none", borderRadius: 8, color: "#fff", padding: "10px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
+                  📋 ก๊อปปี้ลิงก์
+                </button>
+                <button onClick={() => setShowShare(false)} style={{ flex: 1, background: "#E8663D", border: "none", borderRadius: 8, color: "#fff", padding: "10px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
+                  ปิดหน้าต่าง
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
@@ -509,10 +549,30 @@ const LS_KEY = "basketball_queue_v1";
 
 export default function App() {
   const [phase, setPhase] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('shareData')) {
+      return "queue";
+    }
     try { const saved = localStorage.getItem(LS_KEY); if (saved) return JSON.parse(saved).phase; } catch(e) {}
     return "setup";
   });
+
   const [config, setConfig] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const shareData = params.get('shareData');
+    if (shareData) {
+      try {
+        const decoded = JSON.parse(decodeURIComponent(escape(atob(shareData))));
+        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+        // Ensure log and history exist
+        decoded.log = [];
+        decoded.history = [];
+        return decoded;
+      } catch(e) {
+        console.error("Invalid share data", e);
+      }
+    }
     try { const saved = localStorage.getItem(LS_KEY); if (saved) return JSON.parse(saved).queueData; } catch(e) {}
     return null;
   });
