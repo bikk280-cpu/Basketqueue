@@ -193,6 +193,23 @@ function QueueScreen({ initial, onReset }) {
   // ✅ ระบบ Undo
   const [history, setHistory] = useState(initial.history || []);
 
+  const dragItemIndex = useRef(null);
+  const dragOverItemIndex = useRef(null);
+
+  const handleDragEnd = () => {
+    if (dragItemIndex.current !== null && dragOverItemIndex.current !== null && dragItemIndex.current !== dragOverItemIndex.current) {
+      saveSnapshot();
+      const newQueue = [...queue];
+      const draggedItem = newQueue[dragItemIndex.current];
+      newQueue.splice(dragItemIndex.current, 1);
+      newQueue.splice(dragOverItemIndex.current, 0, draggedItem);
+      setQueue(newQueue);
+      pushLog(`🔄 เปลี่ยนลำดับคิว: ${draggedItem.name}`);
+    }
+    dragItemIndex.current = null;
+    dragOverItemIndex.current = null;
+  };
+
   const saveSnapshot = () => {
     setHistory(prev => [
       ...prev.slice(-19),
@@ -448,11 +465,18 @@ function QueueScreen({ initial, onReset }) {
             <p style={{ color: "rgba(255,255,255,0.22)", fontSize: 13, textAlign: "center", margin: "0 0 10px", padding: "4px 0" }}>— คิวว่าง —</p>
           )}
           {queue.map((t, i) => (
-            <div key={i} style={{
+            <div key={i} 
+              draggable
+              onDragStart={(e) => { dragItemIndex.current = i; }}
+              onDragEnter={(e) => { dragOverItemIndex.current = i; }}
+              onDragOver={(e) => e.preventDefault()}
+              onDragEnd={handleDragEnd}
+              style={{
               display: "flex", alignItems: "center", gap: 8,
               padding: "8px 10px", borderRadius: 10, marginBottom: 6,
               background: i === 0 ? "rgba(232,102,61,0.1)" : "rgba(255,255,255,0.04)",
               border: `1px solid ${i === 0 ? "rgba(232,102,61,0.25)" : "rgba(255,255,255,0.07)"}`,
+              cursor: "grab"
             }}>
               <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 11, width: 16, textAlign: "center" }}>{i + 1}</span>
               <Avatar name={t.name} size={28} />
