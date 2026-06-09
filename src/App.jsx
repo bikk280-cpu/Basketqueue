@@ -198,6 +198,8 @@ function QueueScreen({ initial, onReset }) {
 
   const dragItemIndex = useRef(null);
   const dragOverItemIndex = useRef(null);
+  const [touchDragIdx, setTouchDragIdx] = useState(null);
+  const queueListRef = useRef(null);
 
   const handleDragEnd = () => {
     if (dragItemIndex.current !== null && dragOverItemIndex.current !== null && dragItemIndex.current !== dragOverItemIndex.current) {
@@ -211,6 +213,32 @@ function QueueScreen({ initial, onReset }) {
     }
     dragItemIndex.current = null;
     dragOverItemIndex.current = null;
+  };
+
+  // ✅ Touch drag handlers for mobile
+  const handleTouchStart = (i, e) => {
+    dragItemIndex.current = i;
+    setTouchDragIdx(i);
+  };
+
+  const handleTouchMove = (e) => {
+    if (dragItemIndex.current === null) return;
+    const touch = e.touches[0];
+    const listEl = queueListRef.current;
+    if (!listEl) return;
+    const items = listEl.querySelectorAll('[data-queue-item]');
+    for (let j = 0; j < items.length; j++) {
+      const rect = items[j].getBoundingClientRect();
+      if (touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+        dragOverItemIndex.current = j;
+        break;
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    handleDragEnd();
+    setTouchDragIdx(null);
   };
 
   const saveSnapshot = () => {
@@ -477,8 +505,10 @@ function QueueScreen({ initial, onReset }) {
           {queue.length === 0 && (
             <p style={{ color: "rgba(255,255,255,0.22)", fontSize: 13, textAlign: "center", margin: "0 0 10px", padding: "4px 0" }}>— คิวว่าง —</p>
           )}
+          <div ref={queueListRef} onTouchMove={handleTouchMove}>
           {queue.map((t, i) => (
-            <div key={i} 
+            <div key={i}
+              data-queue-item
               draggable
               onDragStart={(e) => { dragItemIndex.current = i; }}
               onDragEnter={(e) => { dragOverItemIndex.current = i; }}
@@ -487,10 +517,16 @@ function QueueScreen({ initial, onReset }) {
               style={{
               display: "flex", alignItems: "center", gap: 8,
               padding: "8px 10px", borderRadius: 10, marginBottom: 6,
-              background: i === 0 ? "rgba(232,102,61,0.1)" : "rgba(255,255,255,0.04)",
-              border: `1px solid ${i === 0 ? "rgba(232,102,61,0.25)" : "rgba(255,255,255,0.07)"}`,
-              cursor: "grab"
+              background: touchDragIdx === i ? "rgba(232,102,61,0.25)" : i === 0 ? "rgba(232,102,61,0.1)" : "rgba(255,255,255,0.04)",
+              border: `1px solid ${touchDragIdx === i ? "#E8663D" : i === 0 ? "rgba(232,102,61,0.25)" : "rgba(255,255,255,0.07)"}`,
+              transition: "background 0.15s, border-color 0.15s",
             }}>
+              {/* ≡ Drag handle for touch */}
+              <span
+                onTouchStart={(e) => handleTouchStart(i, e)}
+                onTouchEnd={handleTouchEnd}
+                style={{ color: "rgba(255,255,255,0.3)", fontSize: 18, cursor: "grab", padding: "0 2px", touchAction: "none", userSelect: "none", lineHeight: 1 }}
+              >≡</span>
               <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 11, width: 16, textAlign: "center" }}>{i + 1}</span>
               <Avatar name={t.name} size={28} />
               {editing === i ? (
@@ -505,6 +541,7 @@ function QueueScreen({ initial, onReset }) {
               )}
             </div>
           ))}
+          </div>
           <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
             <input value={newTeam} onChange={e => setNewTeam(e.target.value)}
               onKeyDown={e => e.key === "Enter" && addToQueue()}
