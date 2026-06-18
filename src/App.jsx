@@ -199,6 +199,7 @@ function QueueScreen({ initial, onReset }) {
   const dragItemIndex = useRef(null);
   const dragOverItemIndex = useRef(null);
   const [touchDragIdx, setTouchDragIdx] = useState(null);
+  const [dragOverIdx, setDragOverIdx] = useState(null);
   const queueListRef = useRef(null);
 
   const handleDragEnd = () => {
@@ -213,9 +214,10 @@ function QueueScreen({ initial, onReset }) {
     }
     dragItemIndex.current = null;
     dragOverItemIndex.current = null;
+    setDragOverIdx(null);
   };
 
-  // ✅ Touch drag handlers for mobile
+  // ✅ Touch drag handlers for mobile (fixed: prevent page scroll)
   const handleTouchStart = (i, e) => {
     dragItemIndex.current = i;
     setTouchDragIdx(i);
@@ -223,6 +225,7 @@ function QueueScreen({ initial, onReset }) {
 
   const handleTouchMove = (e) => {
     if (dragItemIndex.current === null) return;
+    e.preventDefault(); // 🐛 fix: หยุดไม่ให้หน้าเว็บเลื่อนตามนิ้ว
     const touch = e.touches[0];
     const listEl = queueListRef.current;
     if (!listEl) return;
@@ -231,6 +234,7 @@ function QueueScreen({ initial, onReset }) {
       const rect = items[j].getBoundingClientRect();
       if (touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
         dragOverItemIndex.current = j;
+        setDragOverIdx(j);
         break;
       }
     }
@@ -239,6 +243,7 @@ function QueueScreen({ initial, onReset }) {
   const handleTouchEnd = () => {
     handleDragEnd();
     setTouchDragIdx(null);
+    setDragOverIdx(null);
   };
 
   const saveSnapshot = () => {
@@ -505,27 +510,32 @@ function QueueScreen({ initial, onReset }) {
           {queue.length === 0 && (
             <p style={{ color: "rgba(255,255,255,0.22)", fontSize: 13, textAlign: "center", margin: "0 0 10px", padding: "4px 0" }}>— คิวว่าง —</p>
           )}
-          <div ref={queueListRef} onTouchMove={handleTouchMove}>
+          <div ref={queueListRef} onTouchMove={handleTouchMove} style={{ touchAction: "none" }}>
           {queue.map((t, i) => (
-            <div key={i}
+            <div
+              key={t.name + i}
               data-queue-item
               draggable
               onDragStart={(e) => { dragItemIndex.current = i; }}
-              onDragEnter={(e) => { dragOverItemIndex.current = i; }}
+              onDragEnter={(e) => { dragOverItemIndex.current = i; setDragOverIdx(i); }}
               onDragOver={(e) => e.preventDefault()}
               onDragEnd={handleDragEnd}
+              className={[
+                "queue-item",
+                touchDragIdx === i ? "dragging" : "",
+                dragOverIdx === i && dragItemIndex.current !== i ? "drag-over" : "",
+              ].join(" ")}
               style={{
-              display: "flex", alignItems: "center", gap: 8,
-              padding: "8px 10px", borderRadius: 10, marginBottom: 6,
-              background: touchDragIdx === i ? "rgba(232,102,61,0.25)" : i === 0 ? "rgba(232,102,61,0.1)" : "rgba(255,255,255,0.04)",
-              border: `1px solid ${touchDragIdx === i ? "#E8663D" : i === 0 ? "rgba(232,102,61,0.25)" : "rgba(255,255,255,0.07)"}`,
-              transition: "background 0.15s, border-color 0.15s",
-            }}>
+                display: "flex", alignItems: "center", gap: 8,
+                padding: "8px 10px", borderRadius: 10, marginBottom: 6,
+                background: touchDragIdx === i ? "rgba(232,102,61,0.2)" : i === 0 ? "rgba(232,102,61,0.1)" : "rgba(255,255,255,0.04)",
+                border: `1px solid ${touchDragIdx === i ? "#E8663D" : i === 0 ? "rgba(232,102,61,0.25)" : "rgba(255,255,255,0.07)"}`,
+              }}>
               {/* ≡ Drag handle for touch */}
               <span
                 onTouchStart={(e) => handleTouchStart(i, e)}
                 onTouchEnd={handleTouchEnd}
-                style={{ color: "rgba(255,255,255,0.3)", fontSize: 18, cursor: "grab", padding: "0 2px", touchAction: "none", userSelect: "none", lineHeight: 1 }}
+                style={{ color: "rgba(255,255,255,0.3)", fontSize: 18, cursor: "grab", padding: "0 4px", touchAction: "none", userSelect: "none", lineHeight: 1 }}
               >≡</span>
               <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 11, width: 16, textAlign: "center" }}>{i + 1}</span>
               <Avatar name={t.name} size={28} />
@@ -585,36 +595,37 @@ function QueueScreen({ initial, onReset }) {
 const LS_KEY = "basketball_queue_v1";
 
 export default function App() {
-  const [phase, setPhase] = useState(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.has('shareData')) {
-      return "queue";
-    }
-    try { const saved = localStorage.getItem(LS_KEY); if (saved) return JSON.parse(saved).phase; } catch(e) {}
-    return "setup";
-  });
-
+  // 🐛 fix: โหลด config ก่อนแล้วค่อย derive phase เพื่อป้องกัน phase=queue แต่ config=null
   const [config, setConfig] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     const shareData = params.get('shareData');
     if (shareData) {
       try {
         const decoded = JSON.parse(decodeURIComponent(escape(atob(shareData))));
-        // Clean URL
         window.history.replaceState({}, document.title, window.location.pathname);
-        // Ensure log and history exist
         decoded.log = [];
         decoded.history = [];
         return decoded;
       } catch(e) {
         console.error("Invalid share data", e);
+        // ถ้าลิงก์เสียให้เคลียร์ URL แล้ว fallback
+        window.history.replaceState({}, document.title, window.location.pathname);
       }
     }
     try { const saved = localStorage.getItem(LS_KEY); if (saved) return JSON.parse(saved).queueData; } catch(e) {}
     return null;
   });
 
-  if (phase === "setup") {
+  const [phase, setPhase] = useState(() => {
+    // phase ขึ้นอยู่กับว่ามี config หรือไม่ — ป้องกัน crash
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('shareData')) return "queue"; // จะ fallback ถ้า config null
+    try { const saved = localStorage.getItem(LS_KEY); if (saved) return JSON.parse(saved).phase; } catch(e) {}
+    return "setup";
+  });
+
+  // 🐛 fix: ถ้า phase=queue แต่ config=null (ลิงก์แชร์เสีย) ให้ fallback ไป setup
+  if (phase === "setup" || !config) {
     return <SetupScreen onStart={cfg => { 
       const initialData = {
         teamA: cfg.teamA,
