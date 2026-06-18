@@ -369,9 +369,44 @@ function QueueScreen({ initial, onReset }) {
   };
 
   const removeRest = () => {
-    saveSnapshot(); // ✅
+    if (!rest) return;
+    saveSnapshot();
     pushLog(`🚪 ${rest.name} เลิกเล่น → ออกจาก Rest`);
     setRest(null);
+    setEditing(null);
+  };
+
+  // ✅ ทีมบนคอร์ทอยากเลิกเล่นกลางคัน
+  const handleLeave = (leavingSide) => {
+    saveSnapshot();
+    const leavingTeam = leavingSide === "A" ? teamA : teamB;
+    const stayingTeam = leavingSide === "A" ? teamB : teamA;
+    const stayingSide = leavingSide === "A" ? "B" : "A";
+
+    pushLog(`🚪 ${leavingTeam.name} เลิกเล่น → ออกจากคอร์ท`);
+
+    // ทีมที่เหลือ reset wins เพราะเป็นเกมใหม่
+    const stayingUpdated = { ...stayingTeam, wins: 0 };
+    winsRef.current = { A: 0, B: 0 };
+
+    let next;
+    const q = [...queue];
+    if (rest) {
+      pushLog(`✅ ${rest.name} พักครบแล้ว → กลับมาเล่น`);
+      next = { ...rest, wins: 0 };
+      setRest(null);
+    } else {
+      next = q.shift() ?? { name: "รอทีม...", wins: 0 };
+    }
+
+    if (stayingSide === "A") {
+      setTeamA(stayingUpdated);
+      setTeamB(next);
+    } else {
+      setTeamA(next);
+      setTeamB(stayingUpdated);
+    }
+    setQueue(q);
     setEditing(null);
   };
 
@@ -467,6 +502,12 @@ function QueueScreen({ initial, onReset }) {
                       fontWeight: 700, cursor: "pointer", fontSize: 12,
                       fontFamily: "'Mitr', sans-serif", letterSpacing: 1,
                     }}>ชนะ 🏆</button>
+                    <button onClick={() => handleLeave(side)} style={{
+                      marginTop: 5, width: "100%", padding: "5px 0", borderRadius: 8,
+                      background: "rgba(255,60,60,0.1)", border: "1px solid rgba(255,60,60,0.25)",
+                      color: "rgba(255,100,100,0.8)", fontWeight: 600, cursor: "pointer", fontSize: 11,
+                      fontFamily: "inherit",
+                    }}>🚪 เลิกเล่น</button>
                   </div>
                 </Fragment>
               );
