@@ -217,27 +217,10 @@ function QueueScreen({ initial, onReset }) {
     setDragOverIdx(null);
   };
 
-  // ✅ Touch drag handlers for mobile (fixed: prevent page scroll)
-  const handleTouchStart = (i, e) => {
+  // ✅ Touch drag: ใช้ useEffect ผูก listener แบบ passive:false เพื่อให้ preventDefault ทำงานได้
+  const handleTouchStart = (i) => {
     dragItemIndex.current = i;
     setTouchDragIdx(i);
-  };
-
-  const handleTouchMove = (e) => {
-    if (dragItemIndex.current === null) return;
-    e.preventDefault(); // 🐛 fix: หยุดไม่ให้หน้าเว็บเลื่อนตามนิ้ว
-    const touch = e.touches[0];
-    const listEl = queueListRef.current;
-    if (!listEl) return;
-    const items = listEl.querySelectorAll('[data-queue-item]');
-    for (let j = 0; j < items.length; j++) {
-      const rect = items[j].getBoundingClientRect();
-      if (touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
-        dragOverItemIndex.current = j;
-        setDragOverIdx(j);
-        break;
-      }
-    }
   };
 
   const handleTouchEnd = () => {
@@ -245,6 +228,27 @@ function QueueScreen({ initial, onReset }) {
     setTouchDragIdx(null);
     setDragOverIdx(null);
   };
+
+  useEffect(() => {
+    const el = queueListRef.current;
+    if (!el) return;
+    const onTouchMove = (e) => {
+      if (dragItemIndex.current === null) return;
+      e.preventDefault(); // ทำงานได้เพราะ passive:false
+      const touch = e.touches[0];
+      const items = el.querySelectorAll('[data-queue-item]');
+      for (let j = 0; j < items.length; j++) {
+        const rect = items[j].getBoundingClientRect();
+        if (touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+          dragOverItemIndex.current = j;
+          setDragOverIdx(j);
+          break;
+        }
+      }
+    };
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    return () => el.removeEventListener('touchmove', onTouchMove);
+  }, []);
 
   const saveSnapshot = () => {
     setHistory(prev => [
@@ -429,8 +433,15 @@ function QueueScreen({ initial, onReset }) {
             {/* ✅ ปุ่ม Share */}
             <button onClick={() => {
               const exportData = { teamA, teamB, rest, queue };
-              const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(exportData))));
-              const url = `${window.location.origin}${window.location.pathname}?shareData=${b64}`;
+              // ✅ ใช้ TextEncoder แทน deprecated unescape
+              const bytes = new TextEncoder().encode(JSON.stringify(exportData));
+              const b64 = btoa(String.fromCharCode(...bytes));
+              // ✅ ใช้ GitHub Pages URL เสมอ ไม่ใช้ localhost
+              const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+              const origin = window.location.hostname === 'localhost'
+                ? `https://bikk280-cpu.github.io${base}`
+                : `${window.location.origin}${base}`;
+              const url = `${origin}/?shareData=${b64}`;
               setShareUrl(url);
               setShowShare(true);
             }} style={{ background: "rgba(232,102,61,0.2)", border: "1px solid rgba(232,102,61,0.5)", borderRadius: 8, color: "#E8663D", padding: "5px 10px", cursor: "pointer", fontSize: 12, fontFamily: "inherit", fontWeight: 600 }}>
@@ -551,7 +562,7 @@ function QueueScreen({ initial, onReset }) {
           {queue.length === 0 && (
             <p style={{ color: "rgba(255,255,255,0.22)", fontSize: 13, textAlign: "center", margin: "0 0 10px", padding: "4px 0" }}>— คิวว่าง —</p>
           )}
-          <div ref={queueListRef} onTouchMove={handleTouchMove} style={{ touchAction: "none" }}>
+          <div ref={queueListRef}>
           {queue.map((t, i) => (
             <div
               key={t.name + i}
@@ -574,7 +585,7 @@ function QueueScreen({ initial, onReset }) {
               }}>
               {/* ≡ Drag handle for touch */}
               <span
-                onTouchStart={(e) => handleTouchStart(i, e)}
+                onTouchStart={() => handleTouchStart(i)}
                 onTouchEnd={handleTouchEnd}
                 style={{ color: "rgba(255,255,255,0.3)", fontSize: 18, cursor: "grab", padding: "0 4px", touchAction: "none", userSelect: "none", lineHeight: 1 }}
               >≡</span>
@@ -636,20 +647,21 @@ function QueueScreen({ initial, onReset }) {
 const LS_KEY = "basketball_queue_v1";
 
 export default function App() {
-  // 🐛 fix: โหลด config ก่อนแล้วค่อย derive phase เพื่อป้องกัน phase=queue แต่ config=null
+  // ✅ โหลด shareData จาก URL ก่อน เพื่อให้ทั้ง config และ phase เห็นตรงกัน
+  const rawShareData = new URLSearchParams(window.location.search).get('shareData');
+
   const [config, setConfig] = useState(() => {
-    const params = new URLSearchParams(window.location.search);
-    const shareData = params.get('shareData');
-    if (shareData) {
+    if (rawShareData) {
       try {
-        const decoded = JSON.parse(decodeURIComponent(escape(atob(shareData))));
+        // ✅ ใช้ TextDecoder แทน deprecated escape/unescape
+        const bytes = Uint8Array.from(atob(rawShareData), c => c.charCodeAt(0));
+        const decoded = JSON.parse(new TextDecoder().decode(bytes));
         window.history.replaceState({}, document.title, window.location.pathname);
         decoded.log = [];
         decoded.history = [];
         return decoded;
       } catch(e) {
-        console.error("Invalid share data", e);
-        // ถ้าลิงก์เสียให้เคลียร์ URL แล้ว fallback
+        console.error('Invalid share data', e);
         window.history.replaceState({}, document.title, window.location.pathname);
       }
     }
@@ -658,11 +670,10 @@ export default function App() {
   });
 
   const [phase, setPhase] = useState(() => {
-    // phase ขึ้นอยู่กับว่ามี config หรือไม่ — ป้องกัน crash
-    const params = new URLSearchParams(window.location.search);
-    if (params.has('shareData')) return "queue"; // จะ fallback ถ้า config null
+    // ✅ ใช้ rawShareData ที่อ่านก่อน clear URL แล้ว — ไม่มีปัญหา race condition
+    if (rawShareData) return 'queue';
     try { const saved = localStorage.getItem(LS_KEY); if (saved) return JSON.parse(saved).phase; } catch(e) {}
-    return "setup";
+    return 'setup';
   });
 
   // 🐛 fix: ถ้า phase=queue แต่ config=null (ลิงก์แชร์เสีย) ให้ fallback ไป setup
