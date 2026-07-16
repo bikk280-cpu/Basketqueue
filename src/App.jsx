@@ -44,30 +44,16 @@ function Avatar({ name, size = 36 }) {
   );
 }
 
-function LEDScore({ wins }) {
-  const [flash, setFlash] = useState(false);
-
-  useEffect(() => {
-    // Trigger flash animation when wins changes
-    setFlash(true);
-    const t = setTimeout(() => setFlash(false), 400);
-    return () => clearTimeout(t);
-  }, [wins]);
-
-  const displayWins = wins < 10 ? `0${wins}` : wins;
-
+function WinDots({ wins }) {
   return (
-    <div style={{
-      background: "#0a0a0a",
-      border: "2px solid #1a1a1a",
-      borderRadius: 6,
-      padding: "4px 12px",
-      display: "inline-block",
-      margin: "4px 0"
-    }}>
-      <span className={["led-score", flash ? "score-update" : ""].join(" ")}>
-        {displayWins}
-      </span>
+    <div style={{ display: "flex", gap: 5, justifyContent: "center" }}>
+      {[0, 1].map(i => (
+        <div key={i} style={{
+          width: 9, height: 9, borderRadius: "50%",
+          background: i < wins ? "#E8663D" : "rgba(255,255,255,0.18)",
+          border: `1.5px solid ${i < wins ? "#E8663D" : "rgba(255,255,255,0.3)"}`,
+        }} />
+      ))}
     </div>
   );
 }
@@ -499,50 +485,44 @@ function QueueScreen({ initial, onReset }) {
           </div>
         )}
 
-        <div style={{ background: "#0a0a0a", borderRadius: 14, border: "2px solid #333", padding: 14, marginBottom: 10, position: "relative", overflow: "hidden" }}>
-          {/* Subtle grid pattern for scoreboard feel */}
-          <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, opacity: 0.1, backgroundImage: "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)", backgroundSize: "10px 10px", pointerEvents: "none" }} />
-          
-          <div style={{ position: "relative" }}>
-            {secLabel("⚡ SCOREBOARD", "#E8663D")}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 8, alignItems: "center" }}>
-              {['A', 'B'].map((side, idx) => {
-                const team = side === 'A' ? teamA : teamB;
-                const isEditing = editing === side;
-                return (
-                  <Fragment key={side}>
-                    {idx === 1 && <span key="vs" style={{ color: "#E8663D", fontWeight: 900, fontSize: 18, textAlign: "center", fontFamily: "'Mitr', sans-serif", textShadow: "0 0 10px rgba(232,102,61,0.5)" }}>VS</span>}
-                    <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: "12px 8px", textAlign: "center", border: "1px solid rgba(255,255,255,0.08)" }}>
-                      <Avatar name={team.name} size={38} />
-                      {isEditing ? (
-                        <div style={{ marginTop: 8 }}>
-                          <InlineEdit value={team.name} onSave={saveEdit} onCancel={() => setEditing(null)} />
-                        </div>
-                      ) : (
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, margin: "8px 0 6px" }}>
-                          <p style={{ color: "#fff", fontWeight: 600, fontSize: 13, margin: 0, fontFamily: "'Mitr', sans-serif", lineHeight: 1.2 }}>{team.name}</p>
-                          <IconBtn onClick={() => setEditing(side)}>✎</IconBtn>
-                        </div>
-                      )}
-                      <LEDScore wins={team.wins} />
-                      <button onClick={() => handleWin(side)} style={{
-                        marginTop: 10, width: "100%", padding: "7px 0", borderRadius: 8,
-                        background: "#E8663D", border: "none", color: "#fff",
-                        fontWeight: 700, cursor: "pointer", fontSize: 12,
-                        fontFamily: "'Mitr', sans-serif", letterSpacing: 1,
-                        textTransform: "uppercase"
-                      }}>WIN</button>
-                      <button onClick={() => handleLeave(side)} style={{
-                        marginTop: 5, width: "100%", padding: "5px 0", borderRadius: 8,
-                        background: "transparent", border: "1px solid rgba(255,60,60,0.4)",
-                        color: "rgba(255,100,100,0.9)", fontWeight: 600, cursor: "pointer", fontSize: 11,
-                        fontFamily: "inherit",
-                      }}>OUT</button>
-                    </div>
-                  </Fragment>
-                );
-              })}
-            </div>
+        <div style={{ background: "rgba(232,102,61,0.11)", borderRadius: 14, border: "1px solid rgba(232,102,61,0.3)", padding: 14, marginBottom: 10 }}>
+          {secLabel("⚡ กำลังแข่ง", "#E8663D")}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 8, alignItems: "center" }}>
+            {['A', 'B'].map((side, idx) => {
+              const team = side === 'A' ? teamA : teamB;
+              const isEditing = editing === side;
+              return (
+                <Fragment key={side}>
+                  {idx === 1 && <span key="vs" style={{ color: "rgba(255,255,255,0.35)", fontWeight: 700, fontSize: 14, textAlign: "center", fontFamily: "'Mitr', sans-serif" }}>VS</span>}
+                  <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 10, padding: "12px 8px", textAlign: "center" }}>
+                    <Avatar name={team.name} size={38} />
+                    {isEditing ? (
+                      <div style={{ marginTop: 8 }}>
+                        <InlineEdit value={team.name} onSave={saveEdit} onCancel={() => setEditing(null)} />
+                      </div>
+                    ) : (
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, margin: "8px 0 6px" }}>
+                        <p style={{ color: "#fff", fontWeight: 600, fontSize: 13, margin: 0, fontFamily: "'Mitr', sans-serif", lineHeight: 1.2 }}>{team.name}</p>
+                        <IconBtn onClick={() => setEditing(side)}>✎</IconBtn>
+                      </div>
+                    )}
+                    <WinDots wins={team.wins} />
+                    <button onClick={() => handleWin(side)} style={{
+                      marginTop: 10, width: "100%", padding: "7px 0", borderRadius: 8,
+                      background: "#E8663D", border: "none", color: "#fff",
+                      fontWeight: 700, cursor: "pointer", fontSize: 12,
+                      fontFamily: "'Mitr', sans-serif", letterSpacing: 1,
+                    }}>ชนะ 🏆</button>
+                    <button onClick={() => handleLeave(side)} style={{
+                      marginTop: 5, width: "100%", padding: "5px 0", borderRadius: 8,
+                      background: "rgba(255,60,60,0.1)", border: "1px solid rgba(255,60,60,0.25)",
+                      color: "rgba(255,100,100,0.8)", fontWeight: 600, cursor: "pointer", fontSize: 11,
+                      fontFamily: "inherit",
+                    }}>🚪 เลิกเล่น</button>
+                  </div>
+                </Fragment>
+              );
+            })}
           </div>
         </div>
 
@@ -573,14 +553,14 @@ function QueueScreen({ initial, onReset }) {
               </div>
             )
           ) : (
-            <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, textAlign: "center", margin: 0, padding: "8px 0" }}>หากมีทีมเหนื่อย สามารถสลับมาพักตรงนี้ได้</p>
+            <p style={{ color: "rgba(255,255,255,0.22)", fontSize: 13, textAlign: "center", margin: 0, padding: "4px 0" }}>— ไม่มีทีมพัก —</p>
           )}
         </div>
 
         <div style={card}>
           {secLabel("📋 คิวรอ")}
           {queue.length === 0 && (
-            <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, textAlign: "center", margin: "0 0 10px", padding: "8px 0" }}>พิมพ์ชื่อแล้วกด + ด้านล่างเพื่อเพิ่มทีมลงคิว</p>
+            <p style={{ color: "rgba(255,255,255,0.22)", fontSize: 13, textAlign: "center", margin: "0 0 10px", padding: "4px 0" }}>— คิวว่าง —</p>
           )}
           <div ref={queueListRef}>
           {queue.map((t, i) => (
