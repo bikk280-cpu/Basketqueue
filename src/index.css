@@ -48,3 +48,23 @@ body {
   border-color: rgba(232, 102, 61, 0.8) !important;
   box-shadow: 0 0 0 2px rgba(232, 102, 61, 0.25) !important;
 }
+
+/* ✅ Scoreboard styles */
+@keyframes flashUpdate {
+  0% { opacity: 1; text-shadow: 0 0 10px #E8663D, 0 0 20px #E8663D; }
+  50% { opacity: 0.3; text-shadow: none; }
+  100% { opacity: 1; text-shadow: 0 0 5px #E8663D; }
+}
+
+.led-score {
+  font-family: 'VT323', monospace;
+  font-size: 42px;
+  color: #ff3c00;
+  text-shadow: 0 0 5px rgba(255, 60, 0, 0.5);
+  line-height: 1;
+  letter-spacing: 2px;
+}
+
+.score-update {
+  animation: flashUpdate 0.4s ease-out;
+}
