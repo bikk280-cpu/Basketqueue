@@ -1,7 +1,6 @@
 import React, { useState, useRef, Fragment, useEffect } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import "./index.css";
-import { normalizeQueueData, encodeShareData, decodeShareData } from "./queue-data.js";
 
 const PALETTE = ["#E8663D","#3B82F6","#10B981","#F59E0B","#8B5CF6","#EF4444","#06B6D4","#84CC16","#EC4899","#14B8A6"];
 
@@ -267,7 +266,7 @@ function QueueScreen({ initial, onReset }) {
     setQueue(prev.queue);
     setLog(prev.log);
     // ✅ sync ref กลับด้วย
-    winsRef.current = { A: prev.teamA?.wins || 0, B: prev.teamB?.wins || 0 };
+    winsRef.current = { A: prev.teamA.wins, B: prev.teamB.wins };
     setHistory(h => h.slice(0, -1));
   };
 
@@ -290,7 +289,7 @@ function QueueScreen({ initial, onReset }) {
     setEditing(null);
   };
 
-  const winsRef = useRef({ A: initial.teamA?.wins || 0, B: initial.teamB?.wins || 0 });
+  const winsRef = useRef({ A: initial.teamA.wins || 0, B: initial.teamB.wins || 0 });
 
   // ✅ Save state to localStorage whenever it changes
   useEffect(() => {
@@ -302,7 +301,6 @@ function QueueScreen({ initial, onReset }) {
   }, [teamA, teamB, rest, queue, log, history]);
 
   const handleWin = (winner) => {
-    if (!teamA || !teamB) return;
     saveSnapshot();
 
     // ✅ อ่านจาก ref แทน state — ได้ค่าล่าสุดเสมอ
@@ -325,10 +323,10 @@ function QueueScreen({ initial, onReset }) {
       if (rest) {
         pushLog(`✅ ${rest.name} พักครบแล้ว → กลับมาเล่น`);
         courtA = { name: rest.name, wins: 0 };
-        courtB = q.shift() ?? null;
+        courtB = q.shift() ?? { name: "รอทีม...", wins: 0 };
       } else {
-        courtA = q.shift() ?? null;
-        courtB = q.shift() ?? null;
+        courtA = q.shift() ?? { name: "รอทีม...", wins: 0 };
+        courtB = q.shift() ?? { name: "รอทีม...", wins: 0 };
       }
 
       setTeamA(courtA);
@@ -348,7 +346,7 @@ function QueueScreen({ initial, onReset }) {
         next = { ...rest, wins: 0 };
         setRest(null);
       } else {
-        next = q.shift() ?? null;
+        next = q.shift() ?? { name: "รอทีม...", wins: 0 };
       }
 
       if (winner === "A") {
@@ -369,17 +367,8 @@ function QueueScreen({ initial, onReset }) {
     if (!newTeam.trim()) return;
     saveSnapshot(); // ✅
     const n = newTeam.trim();
-    const next = { name: n, wins: 0 };
-    if (!teamA) {
-      setTeamA(next);
-      winsRef.current.A = 0;
-    } else if (!teamB) {
-      setTeamB(next);
-      winsRef.current.B = 0;
-    } else {
-      setQueue(prev => [...prev, next]);
-    }
-    pushLog(`➕ เพิ่ม ${n} ${!teamA || !teamB ? "ลงคอร์ท" : "เข้าคิว"}`);
+    setQueue(prev => [...prev, { name: n, wins: 0 }]);
+    pushLog(`➕ เพิ่ม ${n} เข้าคิว`);
     setNewTeam("");
   };
 
@@ -393,7 +382,6 @@ function QueueScreen({ initial, onReset }) {
 
   // ✅ ทีมบนคอร์ทอยากเลิกเล่นกลางคัน
   const handleLeave = (leavingSide) => {
-    if (!(leavingSide === "A" ? teamA : teamB)) return;
     saveSnapshot();
     const leavingTeam = leavingSide === "A" ? teamA : teamB;
     const stayingTeam = leavingSide === "A" ? teamB : teamA;
@@ -402,7 +390,7 @@ function QueueScreen({ initial, onReset }) {
     pushLog(`🚪 ${leavingTeam.name} เลิกเล่น → ออกจากคอร์ท`);
 
     // ทีมที่เหลือ reset wins เพราะเป็นเกมใหม่
-    const stayingUpdated = stayingTeam ? { ...stayingTeam, wins: 0 } : null;
+    const stayingUpdated = { ...stayingTeam, wins: 0 };
     winsRef.current = { A: 0, B: 0 };
 
     let next;
@@ -412,7 +400,7 @@ function QueueScreen({ initial, onReset }) {
       next = { ...rest, wins: 0 };
       setRest(null);
     } else {
-      next = q.shift() ?? null;
+      next = q.shift() ?? { name: "รอทีม...", wins: 0 };
     }
 
     if (stayingSide === "A") {
@@ -445,12 +433,15 @@ function QueueScreen({ initial, onReset }) {
             {/* ✅ ปุ่ม Share */}
             <button onClick={() => {
               const exportData = { teamA, teamB, rest, queue };
+              // ✅ ใช้ TextEncoder แทน deprecated unescape
+              const bytes = new TextEncoder().encode(JSON.stringify(exportData));
+              const b64 = btoa(String.fromCharCode(...bytes));
+              // ✅ ใช้ GitHub Pages URL เสมอ ไม่ใช้ localhost
               const base = import.meta.env.BASE_URL.replace(/\/$/, '');
               const origin = window.location.hostname === 'localhost'
                 ? `https://bikk280-cpu.github.io${base}`
                 : `${window.location.origin}${base}`;
-              const params = new URLSearchParams({ shareData: encodeShareData(exportData) });
-              const url = `${origin}/?${params}`;
+              const url = `${origin}/?shareData=${b64}`;
               setShareUrl(url);
               setShowShare(true);
             }} style={{ background: "rgba(232,102,61,0.2)", border: "1px solid rgba(232,102,61,0.5)", borderRadius: 8, color: "#E8663D", padding: "5px 10px", cursor: "pointer", fontSize: 12, fontFamily: "inherit", fontWeight: 600 }}>
@@ -504,7 +495,6 @@ function QueueScreen({ initial, onReset }) {
                 <Fragment key={side}>
                   {idx === 1 && <span key="vs" style={{ color: "rgba(255,255,255,0.35)", fontWeight: 700, fontSize: 14, textAlign: "center", fontFamily: "'Mitr', sans-serif" }}>VS</span>}
                   <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 10, padding: "12px 8px", textAlign: "center" }}>
-                    {team ? <>
                     <Avatar name={team.name} size={38} />
                     {isEditing ? (
                       <div style={{ marginTop: 8 }}>
@@ -517,11 +507,10 @@ function QueueScreen({ initial, onReset }) {
                       </div>
                     )}
                     <WinDots wins={team.wins} />
-                    <button onClick={() => handleWin(side)} disabled={!teamA || !teamB} style={{
+                    <button onClick={() => handleWin(side)} style={{
                       marginTop: 10, width: "100%", padding: "7px 0", borderRadius: 8,
                       background: "#E8663D", border: "none", color: "#fff",
-                      fontWeight: 700, cursor: teamA && teamB ? "pointer" : "not-allowed", fontSize: 12,
-                      opacity: teamA && teamB ? 1 : 0.4,
+                      fontWeight: 700, cursor: "pointer", fontSize: 12,
                       fontFamily: "'Mitr', sans-serif", letterSpacing: 1,
                     }}>ชนะ 🏆</button>
                     <button onClick={() => handleLeave(side)} style={{
@@ -530,7 +519,6 @@ function QueueScreen({ initial, onReset }) {
                       color: "rgba(255,100,100,0.8)", fontWeight: 600, cursor: "pointer", fontSize: 11,
                       fontFamily: "inherit",
                     }}>🚪 เลิกเล่น</button>
-                    </> : <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 13 }}>รอทีม — เพิ่มทีมด้านล่าง</p>}
                   </div>
                 </Fragment>
               );
@@ -636,16 +624,10 @@ function QueueScreen({ initial, onReset }) {
               <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, marginBottom: 16 }}>
                 ให้เพื่อนสแกน QR Code นี้เพื่อเปิดเว็บและโหลดข้อมูลคิวไปทำต่อในเครื่องตัวเอง
               </p>
-              <input aria-label="ลิงก์โอนคิว" value={shareUrl} readOnly onFocus={e => e.target.select()}
-                style={{ width: "100%", boxSizing: "border-box", marginBottom: 12, padding: 8 }} />
               <div style={{ display: "flex", gap: 10 }}>
-                <button onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(shareUrl);
-                    alert("คัดลอกลิงก์เรียบร้อยแล้ว!");
-                  } catch {
-                    alert("คัดลอกไม่สำเร็จ กรุณาเลือกและคัดลอกลิงก์ในช่องด้านบน หรือสแกน QR Code");
-                  }
+                <button onClick={() => {
+                  navigator.clipboard.writeText(shareUrl);
+                  alert("คัดลอกลิงก์เรียบร้อยแล้ว!");
                 }} style={{ flex: 1, background: "rgba(255,255,255,0.1)", border: "none", borderRadius: 8, color: "#fff", padding: "10px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
                   📋 ก๊อปปี้ลิงก์
                 </button>
@@ -665,60 +647,55 @@ function QueueScreen({ initial, onReset }) {
 const LS_KEY = "basketball_queue_v1";
 
 export default function App() {
-  // Read once without mutating the URL during React rendering.
-  const [startup] = useState(() => {
-    const params = new URLSearchParams(window.location.search);
-    let warning = "";
-    if (params.has('shareData')) {
+  // ✅ โหลด shareData จาก URL ก่อน เพื่อให้ทั้ง config และ phase เห็นตรงกัน
+  const rawShareData = new URLSearchParams(window.location.search).get('shareData');
+
+  const [config, setConfig] = useState(() => {
+    if (rawShareData) {
       try {
-        return { config: decodeShareData(params.get('shareData')), warning: "" };
-      } catch {
-        warning = "ลิงก์คิวไม่ถูกต้อง ระบบไม่ได้แทนที่ข้อมูลเดิมในเครื่อง";
+        // ✅ ใช้ TextDecoder แทน deprecated escape/unescape
+        const bytes = Uint8Array.from(atob(rawShareData), c => c.charCodeAt(0));
+        const decoded = JSON.parse(new TextDecoder().decode(bytes));
+        window.history.replaceState({}, document.title, window.location.pathname);
+        decoded.log = [];
+        decoded.history = [];
+        return decoded;
+      } catch(e) {
+        console.error('Invalid share data', e);
+        window.history.replaceState({}, document.title, window.location.pathname);
       }
     }
-    try {
-      const saved = JSON.parse(localStorage.getItem(LS_KEY));
-      if (saved?.phase === 'queue') {
-        return { config: normalizeQueueData(saved.queueData), warning };
-      }
-    } catch {
-      warning = warning || "อ่านข้อมูลคิวที่บันทึกไว้ไม่ได้ กรุณาตั้งค่าคิวใหม่";
-    }
-    return { config: null, warning };
+    try { const saved = localStorage.getItem(LS_KEY); if (saved) return JSON.parse(saved).queueData; } catch(e) {}
+    return null;
   });
-  const [config, setConfig] = useState(startup.config);
-  const [warning, setWarning] = useState(startup.warning);
 
-  useEffect(() => {
-    const url = new URL(window.location.href);
-    if (url.searchParams.has('shareData')) {
-      url.searchParams.delete('shareData');
-      window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
-    }
-  }, []);
+  const [phase, setPhase] = useState(() => {
+    // ✅ ใช้ rawShareData ที่อ่านก่อน clear URL แล้ว — ไม่มีปัญหา race condition
+    if (rawShareData) return 'queue';
+    try { const saved = localStorage.getItem(LS_KEY); if (saved) return JSON.parse(saved).phase; } catch(e) {}
+    return 'setup';
+  });
 
-  const notice = warning && <div role="alert" style={{ background: "#643800", color: "white", padding: 12 }}>
-    {warning} <button onClick={() => setWarning("")}>ปิด</button>
-  </div>;
-
-  if (!config) {
-    return <>{notice}<SetupScreen onStart={cfg => {
+  // 🐛 fix: ถ้า phase=queue แต่ config=null (ลิงก์แชร์เสีย) ให้ fallback ไป setup
+  if (phase === "setup" || !config) {
+    return <SetupScreen onStart={cfg => { 
       const initialData = {
         teamA: cfg.teamA,
         teamB: cfg.teamB,
-        rest: cfg.restTeam ? { name: cfg.restTeam, wins: 0 } : null,
+        rest: cfg.restTeam ? { name: cfg.restTeam } : null,
         queue: cfg.queue.map(n => ({ name: n, wins: 0 })),
         log: [],
         history: []
       };
-      setConfig(initialData);
-      setWarning("");
-    }} /></>;
+      localStorage.setItem(LS_KEY, JSON.stringify({ phase: "queue", queueData: initialData }));
+      setConfig(initialData); 
+      setPhase("queue"); 
+    }} />;
   }
 
-  return <>{notice}<QueueScreen initial={config} onReset={() => {
+  return <QueueScreen initial={config} onReset={() => { 
     localStorage.removeItem(LS_KEY);
-    setConfig(null);
-    setWarning("");
-  }} /></>;
+    setConfig(null); 
+    setPhase("setup"); 
+  }} />;
 }
