@@ -4,6 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Basketball Queue</title>
+    <script>
+      (() => {
+        try {
+          const savedTheme = localStorage.getItem("basketball_theme_v1");
+          const theme = savedTheme === "light" || savedTheme === "dark"
+            ? savedTheme
+            : window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+          document.documentElement.dataset.theme = theme;
+        } catch {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -1,0 +1,8 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Action icon">
+<path id="Share connections" d="M8.5992 10.4998L15.4008 6.4992M8.5992 13.5002L15.4008 17.5008" stroke="#F3F5F8" stroke-width="2" stroke-linecap="round"/>
+<path id="Share endpoint" d="M6 15C7.65685 15 9 13.6569 9 12C9 10.3431 7.65685 9 6 9C4.34315 9 3 10.3431 3 12C3 13.6569 4.34315 15 6 15Z" stroke="#F3F5F8" stroke-width="2"/>
+<path id="Share endpoint_2" d="M18 7.9992C19.6569 7.9992 21 6.65605 21 4.9992C21 3.34235 19.6569 1.9992 18 1.9992C16.3431 1.9992 15 3.34235 15 4.9992C15 6.65605 16.3431 7.9992 18 7.9992Z" stroke="#F3F5F8" stroke-width="2"/>
+<path id="Share endpoint_3" d="M18 22.0008C19.6569 22.0008 21 20.6577 21 19.0008C21 17.3439 19.6569 16.0008 18 16.0008C16.3431 16.0008 15 17.3439 15 19.0008C15 20.6577 16.3431 22.0008 18 22.0008Z" stroke="#F3F5F8" stroke-width="2"/>
+</g>
+</svg>
